@@ -26,6 +26,9 @@ public:
     float radius;
     float effect_dist;
 
+    glm::vec3 temp_acc;
+    particle *temp_pt;
+
     void setBound(glm::vec3 box_size);
 
     void step(float delta, std::vector<float> *lines);
@@ -34,6 +37,9 @@ public:
 
     void randomizeInteractionMat(float mag);
 
+    bool isParticleInBound(float x, float y, float r);
+    void integrateForce(unsigned int id);
+    
     void clear();
 };
 

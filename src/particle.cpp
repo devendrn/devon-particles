@@ -13,15 +13,47 @@ ParticleSystem::ParticleSystem()
     pts_size = 0;
     radius = 0.2f;
     damp = 100.0f;        
-    effect_dist = 0.2f;
+    effect_dist = 0.3f;
+}
+
+bool ParticleSystem::isParticleInBound(float x, float y, float r)
+{
+    if(temp_pt->pos.x<x-r || temp_pt->pos.x>x+r ||
+       temp_pt->pos.y<y-r || temp_pt->pos.y>y+r)
+        return false;
+    return true;
+}
+
+void ParticleSystem::integrateForce(unsigned int id)
+{
+    vec3 disp = pts[id].pos - temp_pt->pos;
+
+    float dist = length(disp);
+    if (0<dist && dist<effect_dist)
+    {
+        float charge = interaction_mat[temp_pt->id][pts[id].id];
+
+        // calculating acc vector
+        // very bad
+        float dinv = 1.0f/(dist);
+        temp_acc += disp*(dinv*dinv*(charge*dinv - radius*dinv*dinv));
+        //float dinv = 1.0f/(dist*dist);
+        //float radcube = radius*radius*radius;
+        //if (dist<radius)
+        //{
+        //    acc -= disp*(dinv-dist/radcube);
+        //} else {
+        //    acc += 1.0f*charge*disp/dist;
+        //}
+    }
 }
 
 // update particles
 void ParticleSystem::step(float delta, std::vector<float> *lines)
 {
     // using quadtree for optimization
-    // assuming cube as bound
-    Quadtree quadtreePoints({0.0f,0.0f,bound_size.x},4,lines);
+    // assuming square as bound
+    Quadtree<ParticleSystem> quadtreePoints(0.0f,0.0f,bound_size.x,3,lines);
 
     // build the quadtree - should be moved inside quadtree class
     for (unsigned int i=0; i<pts_size; i++)
@@ -29,43 +61,16 @@ void ParticleSystem::step(float delta, std::vector<float> *lines)
 
     for (unsigned int i=0; i<pts_size; i++)
     {
-        // get closest particles using quadtree
-        std::vector<unsigned int> found;
-        quadtreePoints.query(pts[i].pos.x,pts[i].pos.y,effect_dist,&found);
-
-        // to find net acceleration due to particle interaction forces
-        vec3 acc = vec3(0.0);
-        for (unsigned int j=0; j<found.size(); j++)
-        {
-            // find the distance between the particles
-            // and use that to calculate the force field between them
-            // assume same mass for all particles
-            vec3 disp = pts[found[j]].pos - pts[i].pos;
-
-            float dist = length(disp);
-            if (0<dist && dist<effect_dist)
-            {
-                float charge = interaction_mat[pts[i].id][pts[found[j]].id];
-
-                // calculating acc vector
-                // very bad
-                float dinv = 1.0f/(dist);
-                acc += disp*(dinv*dinv*(charge*dinv - radius*dinv*dinv));
-                //float dinv = 1.0f/(dist*dist);
-                //float radcube = radius*radius*radius;
-                //if (dist<radius)
-                //{
-                //    acc -= disp*(dinv-dist/radcube);
-                //} else {
-                //    acc += 1.0f*charge*disp/dist;
-                //}
-            }
-        }
-
-        acc.x -= 1000.0f;
+        // get closest particles using quadtree and integrate force
+        // these temp vars will be used by isParticleInBound and integrateForce
+        temp_pt = &pts[i];
+        temp_acc = vec3(0.0f);
+        quadtreePoints.traverse(this,&ParticleSystem::isParticleInBound,&ParticleSystem::integrateForce);
+        
+        temp_acc.x -= 1000.0f;
         
         // update velocity
-        pts[i].vel += acc * delta - pts[i].vel * delta * damp;
+        pts[i].vel += temp_acc * delta - pts[i].vel * delta * damp;
 
         // clamp velocity magnitude
         // could be made lighter?
@@ -127,15 +132,15 @@ void ParticleSystem::clear()
     pts_size = 0;
 }
 
-// set interacton mat wiht random values
+// set interaction mat with random values
 void ParticleSystem::randomizeInteractionMat(float mag)
 {
     for (unsigned char i=0; i<5; i++) 
     {
         for (unsigned char j=0; j<5; j++)
         {
-            //interaction_mat[i][j] = i==j ? mag : 0.0f;
-            interaction_mat[i][j] = mag * ((rand()%2));
+            //interaction_mat[i][j] = mag * ((rand()%2));
+            interaction_mat[i][j] = i==j ? mag : 0.0f;
         }
     }
 }
