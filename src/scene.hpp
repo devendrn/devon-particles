@@ -19,7 +19,7 @@ public:
     Camera(float radius = 3.0f): radius(radius)
     {
         orb_vector = glm::vec3(0, 0, radius);
-        view = glm::translate(glm::mat4(1), orb_vector);
+        updateCameraVectors(0,0);
     }
 
     void ProcessMouseMovement(float dx, float dy)
@@ -46,8 +46,9 @@ private:
     {
         glm::mat4 rot = glm::rotate(glm::mat4(1),-dx,glm::vec3(0, 1, 0));
         orb_vector = rot * glm::vec4(orb_vector,1.0f);
+        rot = glm::rotate(glm::mat4(1),-dy,glm::cross(orb_vector,glm::vec3(0, 1, 0)));
+        orb_vector = rot * glm::vec4(orb_vector,1.0f);
         view = glm::lookAt(orb_vector,glm::vec3(0.0f),glm::vec3(0, 1, 0));
-        //view = glm::rotate(view, dy, glm::vec3(1, 0, 0));
     }
 };
 

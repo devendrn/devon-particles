@@ -60,7 +60,7 @@ int main()
     glfwSetScrollCallback(window, scrollCallback);
 
     // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -274,6 +274,10 @@ void mouseCallback(GLFWwindow* window, double xposIn, double yposIn)
     mouse_lastpos.x = pos.x;
     mouse_lastpos.y = pos.y;
 
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) 
+    {
+       return;
+    }
     camera.ProcessMouseMovement(dx, dy);
 }
 
