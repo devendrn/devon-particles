@@ -24,7 +24,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(4.0f);
+Camera camera(40.0f);
 
 glm::vec2 mouse_lastpos = glm::vec2(SCR_WIDTH/2.0f,SCR_HEIGHT/2.0f);
 bool first_mouse_click = true;
@@ -139,8 +139,8 @@ int main()
     // create particle system 
     // and initialize some parameters
     ParticleSystem points;
-    points.bound_size = glm::vec3(1.0f);
-    points.boxFill(glm::vec3(1.0f), 600);
+    points.bound_size = glm::vec3(10.0f);
+    points.boxFill(glm::vec3(10.0f), 600);
     points.randomizeInteractionMat(5.0f);
 
     // render loop

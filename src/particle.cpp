@@ -11,17 +11,20 @@ using namespace glm;
 ParticleSystem::ParticleSystem()
 {
     pts_size = 0;
-    radius = 0.2f;
-    damp = 100.0f;        
-    effect_dist = 0.3f;
+    radius = 0.5f;
+    damp = 0.3f;        
+    effect_dist = 3.0f;
 }
 
 bool ParticleSystem::isParticleInBound(float x, float y, float r)
 {
-    if(temp_pt->pos.x<x-r || temp_pt->pos.x>x+r ||
-       temp_pt->pos.y<y-r || temp_pt->pos.y>y+r)
-        return false;
-    return true;
+    float tx = temp_pt->pos.x;
+    float ty = temp_pt->pos.y;
+    if(tx>x-r && tx<x+r && ty>y-r && ty<y+r)
+      return true;
+    if(abs(x-tx)<effect_dist ||abs(y-ty)<effect_dist)
+      return true;
+    return false;
 }
 
 void ParticleSystem::integrateForce(unsigned int id)
@@ -32,19 +35,18 @@ void ParticleSystem::integrateForce(unsigned int id)
     if (0<dist && dist<effect_dist)
     {
         float charge = interaction_mat[temp_pt->id][pts[id].id];
-
+        charge = 1.0f;
         // calculating acc vector
         // very bad
         float dinv = 1.0f/(dist);
-        temp_acc += disp*(dinv*dinv*(charge*dinv - radius*dinv*dinv));
-        //float dinv = 1.0f/(dist*dist);
-        //float radcube = radius*radius*radius;
-        //if (dist<radius)
-        //{
-        //    acc -= disp*(dinv-dist/radcube);
-        //} else {
-        //    acc += 1.0f*charge*disp/dist;
-        //}
+        temp_acc += 0.1f*disp*(dinv*dinv*(charge*dinv - radius*dinv*dinv));
+        
+        // to visualize quadtree selection points
+        if(temp_pt->id==3 && pts[id].id!=3) pts[id].id = 2;
+
+        // temp_acc += disp*(-dinv*dinv*radius + 1/radius);
+        // if (dist>radius)
+        //   temp_acc *= 100*charge*(dinv*dinv - 0.1/(effect_dist*effect_dist)) ;
     }
 }
 
@@ -55,38 +57,40 @@ void ParticleSystem::step(float delta, std::vector<float> *lines)
     // assuming square as bound
     Quadtree<ParticleSystem> quadtreePoints(0.0f,0.0f,bound_size.x,3,lines);
 
-    // build the quadtree - should be moved inside quadtree class
+    // build quadtree
     for (unsigned int i=0; i<pts_size; i++)
         quadtreePoints.insert(pts[i].pos.x,pts[i].pos.y,i);
+   
+    // to visualize quadtree points selection
+    for (unsigned int i=0; i<pts_size; i++)
+      pts[i].id = 1;
+    pts[10].id = 3;
 
     for (unsigned int i=0; i<pts_size; i++)
     {
-        // get closest particles using quadtree and integrate force
-        // these temp vars will be used by isParticleInBound and integrateForce
         temp_pt = &pts[i];
         temp_acc = vec3(0.0f);
         quadtreePoints.traverse(this,&ParticleSystem::isParticleInBound,&ParticleSystem::integrateForce);
-        
-        temp_acc.x -= 1000.0f;
+
+        //temp_acc.x -= 1000.0f;
         
         // update velocity
-        pts[i].vel += temp_acc * delta - pts[i].vel * delta * damp;
+        pts[i].vel += temp_acc*delta - pts[i].vel*delta*damp;
 
         // clamp velocity magnitude
-        // could be made lighter?
         float len = length(pts[i].vel);  
         if (len>0) // vector * min( 1 , max_magnitude / magnitude )
-            pts[i].vel = pts[i].vel * min(1.0f, 0.6f/len);
+            pts[i].vel = pts[i].vel * min(1.0f, 40.0f/len);
 
         // warp particles to opposte side
         // note: this does not warp force field however
         // therefore the particles seem to be affected by the edges
         if (abs(pts[i].pos.x)>bound_size.x)
-            pts[i].pos.x -= 1.999f*sign(pts[i].pos.x*bound_size.x);
+            pts[i].pos.x -= 1.999f*sign(pts[i].pos.x)*bound_size.x;
         if (abs(pts[i].pos.y)>bound_size.y)
-            pts[i].pos.y -= 1.999f*sign(pts[i].pos.y*bound_size.y);
+            pts[i].pos.y -= 1.999f*sign(pts[i].pos.y)*bound_size.y;
         if (abs(pts[i].pos.z)>bound_size.z)
-            pts[i].pos.z -= 1.999f*sign(pts[i].pos.z*bound_size.z);
+            pts[i].pos.z -= 1.999f*sign(pts[i].pos.z)*bound_size.z;
 
         // simple deflection
         // prone to tunneling
@@ -118,7 +122,8 @@ void ParticleSystem::boxFill(vec3 box_size, unsigned int particle_count)
             vec3(0.0f),
             
             // id
-            (unsigned char) (rand() % 3)
+            // (unsigned char) (rand() % 3)
+            (unsigned char) 1
         };
         pts.push_back(pt);
     }
