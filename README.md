@@ -3,12 +3,13 @@
 
 This is a horrible particle simulation.
 
-###Libraries used:
+### Libraries used:
  - GLFW
  - GLAD
  - GLM
+ - IMGUI
 
- ###Build:
+ ### Build:
  I'll add details once the program is stable and optimized.
 
 ![Screenshot](docs/screenshot1.jpg "Test Screenshot")

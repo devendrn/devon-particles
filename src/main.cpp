@@ -4,6 +4,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/fwd.hpp>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include <ctime>
 #include <iostream>
@@ -28,6 +31,7 @@ Camera camera(40.0f);
 
 glm::vec2 mouse_lastpos = glm::vec2(SCR_WIDTH/2.0f,SCR_HEIGHT/2.0f);
 bool first_mouse_click = true;
+bool imgui_focus = false;
 
 // timing
 float delta_time = 0.0f;	// time between current frame and last frame
@@ -143,15 +147,27 @@ int main()
     points.boxFill(glm::vec3(10.0f), 600);
     points.randomizeInteractionMat(5.0f);
 
+    // Imgui setup
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
     // render loop
     while (!glfwWindowShouldClose(window))
     {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        imgui_focus = io.WantCaptureMouse;
+
         // get delta time between frames 
         float current_time = static_cast<float>(glfwGetTime());
         delta_time = current_time - last_time;
         last_time = current_time;
 
-        // check input and other events
+        // check key input
         processInput(window);
 
         // get time delay for particle simulation step
@@ -226,11 +242,20 @@ int main()
         glEnableVertexAttribArray(0);
         glDrawArrays(GL_LINES, 0, all_lines_size);
 
+        ImGui::Begin("Devon Particles v0-dev");
+        ImGui::Text("fps: %.1f",1.0f/delta_time);
+        ImGui::End();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     // optional: de-allocate all resources once they've outlived their purpose:
     glDeleteVertexArrays(1, &VAO);
@@ -274,7 +299,7 @@ void mouseCallback(GLFWwindow* window, double xposIn, double yposIn)
     mouse_lastpos.x = pos.x;
     mouse_lastpos.y = pos.y;
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) 
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE || imgui_focus) 
     {
        return;
     }
