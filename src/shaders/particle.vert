@@ -14,12 +14,11 @@ vec3 hsv2rgb(vec3 c) {
   return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-void main()
-{
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    
-    // 3 particles types (0, 1, 2)
-    // color them with hue from green to red
-    float a = id/2.0;
-    ourColor = hsv2rgb(vec3(0.25 + 0.75*a,0.8,0.5 + 0.5*a));
+void main() {
+  gl_Position = projection * view * model * vec4(aPos, 1.0);
+  
+  // 3 particles types (0, 1, 2)
+  // color them with hue from green to red
+  float a = id/2.0;
+  ourColor = hsv2rgb(vec3(0.25 + 0.75*a,0.8,0.5 + 0.5*a));
 }

@@ -25,12 +25,13 @@ set(IMGUI_SOURCES
 )
 
 set(PROJ_SOURCES
-  src/main.cpp
+  src/devon.cpp
   src/particle.cpp
   src/shader.cpp
 )
 
 set(PROJ_HEADERS
+  src/devon.hpp
   src/particle.hpp
   src/shader.hpp
   src/scene.hpp
